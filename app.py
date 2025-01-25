@@ -1,3 +1,6 @@
+import os
+import subprocess
+
 import torch
 from flask import Flask, jsonify, request
 from transformers import BertForSequenceClassification, BertTokenizer
@@ -5,10 +8,32 @@ from transformers import BertForSequenceClassification, BertTokenizer
 # Initialize Flask app
 app = Flask(__name__)
 
+# Function to download the model if it doesn't exist
+def download_model():
+    model_path = "./new_model/model.safetensors"
+    
+    # Check if the model already exists to avoid re-downloading
+    if not os.path.exists(model_path):
+        print("Model not found. Downloading...")
+        
+        # URL of the file from GitHub LFS (update this with your actual link)
+        model_url = "https://github.com/colton456p/DiaBERT/raw/main/new_model/model.safetensors"
+
+        # Download the model file
+        try:
+            subprocess.run(["wget", model_url, "-O", model_path], check=True)
+            print("Model downloaded successfully.")
+        except subprocess.CalledProcessError as e:
+            print(f"Error downloading model: {e}")
+            exit(1)
+
+# Download model if not present
+download_model()
+
 # Load the fine-tuned model and tokenizer
-model_path = "./new_model"  # Update this to your actual model directory
-model = BertForSequenceClassification.from_pretrained(model_path)
-tokenizer = BertTokenizer.from_pretrained(model_path)
+model_directory = "./new_model"  # Directory containing the model and tokenizer
+model = BertForSequenceClassification.from_pretrained(model_directory)
+tokenizer = BertTokenizer.from_pretrained(model_directory)
 
 # Set device (GPU or CPU)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
